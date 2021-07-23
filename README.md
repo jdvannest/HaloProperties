@@ -16,6 +16,7 @@ The following variables should be edited depending on which machine the scripts 
 
 **dcjl\_path**: the absolute path to the DCJL suite
 
+Config.py only needs to be run after a path is updated.
 
 ## Usage
 ### Property Scripts already in the GitHub
