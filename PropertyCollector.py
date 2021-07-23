@@ -17,6 +17,8 @@ output_path = '/myhome2/users/vannest/Data/'
 #Path to prefered python executable
 python_path = '/myhome2/users/vannest/anaconda3/bin/python'
 
+#Make sure to pull the most up to date simulation info
+os.system(f'{python_path} SimulationInfo.py')
 for sim in ['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329']:
     o_flag = '-o' if sim=='cptmarvel' and args.overwrite else ''
     os.system(f'{python_path} Marvel_DCJL.{args.property}.py -s {sim} '+
