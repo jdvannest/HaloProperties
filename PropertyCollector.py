@@ -1,4 +1,4 @@
-import os,argparse
+import os,argparse,pickle
 
 parser = argparse.ArgumentParser(description='This script iterates through'+
             'the Marvel+DCJL resolved dwarf halos and collects the desired'+
@@ -12,14 +12,9 @@ parser.add_argument("-n","--numproc",type=int,default=1,
                     help='The number of processes to use (default=1)')
 args = parser.parse_args()
 
-#Path to directory where datafiles are written
-output_path = '/myhome2/users/vannest/Data/'
-#Path to prefered python executable
-python_path = '/myhome2/users/vannest/anaconda3/bin/python'
 
-#Make sure to pull the most up to date simulation info
-os.system(f'{python_path} SimulationInfo.py')
+config = pickle.load(open('Config.pickle','rb'))
 for sim in ['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329']:
     o_flag = '-o' if sim=='cptmarvel' and args.overwrite else ''
-    os.system(f'{python_path} Marvel_DCJL.{args.property}.py -s {sim} '+
-              f'-p {output_path} -n {args.numproc} {o_flag}')
+    os.system(f'{config["python_path"]} Marvel_DCJL.{args.property}.py -s {sim} '+
+              f'-p {config["output_path"]} -n {args.numproc} {o_flag}')
