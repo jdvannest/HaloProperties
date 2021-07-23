@@ -18,6 +18,13 @@ The following variables should be edited depending on which machine the scripts 
 
 Config.py only needs to be run after a path is updated.
 
+### Running in Parallel
+In order to run in parallel, the python package [pymp](https://github.com/classner/pymp.git) is required. This can be installed with pip:
+	
+	pip install pymp-pypi
+	
+Further documentation can be found [here](https://github.com/classner/pymp.git).
+
 ## Usage
 ### Property Scripts already in the GitHub
 To collect a property for which there is already a script (i.e. if there is a file called "Marvel\_DCJL.<*property*>.py"), then simply run the "PropertyCollector" script:
