@@ -8,7 +8,7 @@ This script initializes a dictionary file with all of the necessary simulation i
 
 The following variables should be edited depending on which machine the scripts are being run on
 
-**output\_path**: the path to the desired directory for the data files
+**output\_path**: the path to the desired directory for the data files (default is the DataFiles directory within the repository)
 
 **python\_path**: the absolute path to your preferred python executable
 
