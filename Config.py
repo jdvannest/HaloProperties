@@ -2,7 +2,7 @@ import pickle
 
 config = {
     #Path to directory where datafiles are written
-    'output_path' : '/myhome2/users/vannest/Data/',
+    'output_path' : 'DataFiles/',
     #Path to prefered python executable
     'python_path' : '/myhome2/users/vannest/anaconda3/bin/python'
 }
