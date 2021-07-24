@@ -67,9 +67,9 @@ else:
 
             pynbody.analysis.angmom.faceon(halo)
             R = pynbody.analysis.luminosity.half_light_r(halo)
-            pynbody.plot.stars.render(halo,width=8*R,filename=image_dir+f'{sim}.{halonum}.Faceon.png')
+            pynbody.plot.stars.render(halo,width=6*R,filename=image_dir+f'{sim}.{halonum}.Faceon.png')
             halo.rotate_x(90)
-            pynbody.plot.stars.render(halo,width=8*R,filename=image_dir+f'{sim}.{halonum}.Sideon.png')   
+            pynbody.plot.stars.render(halo,width=6*R,filename=image_dir+f'{sim}.{halonum}.Sideon.png')   
 
             #Print progress to terminal
             myprint(f'\tWriting: {round(float(prog[0]+1)/float(len(Sims[sim]["halos"]))*100,2)}%',clear=True)
