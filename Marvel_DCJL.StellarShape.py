@@ -88,7 +88,7 @@ else:
                 cont=False
             if cont:
                 try:
-                    r,ba,ca,angle,Es,nstar,nstar_i = halo_shape_stellar(halo,N=args.number)
+                    r,ba,ca,angle,Es,nstar,nstar_i = halo_shape_stellar(halo,N=N)
                     for i in [1,2,3]:
                         ind = np.where(np.abs(r-i*Rhalf)==min(np.abs(r-i*Rhalf)))[0][0]
                         loop = True
