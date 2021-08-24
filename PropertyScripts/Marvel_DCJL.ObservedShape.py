@@ -75,7 +75,7 @@ else:
             #Replace this block with the desired property to collect
             from pynbody.derived import rxy,az
             import matplotlib.pylab as plt 
-            from math import pi
+            from math import pi,degrees
             from scipy.optimize import curve_fit
             from pynbody.plot.sph import image
             from numpy.linalg import eig, inv
@@ -141,10 +141,10 @@ else:
                 r0 = x[int(len(x)/2)]
                 m0 = np.mean(y[:3])
                 par,ign = curve_fit(sersic,x,y,p0=(m0,r0,1),bounds=([10,0,0.5],[40,100,16.5]))
-                ind = np.where(p['rbins']-2*par[1]==min(abs(p['rbins']-2*par[1])))[0][0]
+                ind = np.where(abs(p['rbins']-2*par[1])==min(abs(p['rbins']-2*par[1])))[0][0]
                 v = p['v_lum_den'][ind]
                 #Plot image and locate isophote of SB @ 2Reff
-                im = image(centered_halo.s,qty='v_lum_den',width=8*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000)
+                im = image(centered_halo.s,qty='v_lum_den',width=8*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
                 plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
                 plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
                 plot_axis.scatter(0,0,marker='+',c='k')
@@ -157,7 +157,7 @@ else:
                 cen = EllipseCenter(E)
                 phi = EllipseAngle(E)
                 a,b = EllipseAxes(E)
-                plot_axis.add_patch(Ellipse(cen,2*a,2*b,phi,facecolor='None',edgecolor='orange'))
+                plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
                 plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
                         ,linewidth=.5,color='orange')
                 plot_axis.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1]
