@@ -17,7 +17,7 @@ args = parser.parse_args()
 
 #########################################################################
 #Change the name of the property you're collecting (used for file naming)
-image_dir = args.path+f'Images/'
+image_dir = args.path+f'Images/StellarImages/'
 #########################################################################
 
 
