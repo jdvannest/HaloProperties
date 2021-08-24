@@ -62,7 +62,7 @@ The above block should be replaced with the actual property calculations/gatheri
 	
 The keys that you add here will be the keys in the resultant dictionary file.
 
-Once the "Marvel\_DCJL.<*property*>.py" has been created, you can simply run the PropertyCollector script as above.
+Once the "Marvel\_DCJL.<*property*>.py" has been created, move it the the "PropertyScripts/" directory. Then you can simply run the PropertyCollector script as above.
 
 ## Output
 Data from the PropertyCollector script are written out as dictionary files named "Marvel\_DCJL.<*property*>.pickle" to the output directory specified in "Config.py". 
