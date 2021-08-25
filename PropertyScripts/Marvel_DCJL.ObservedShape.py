@@ -124,7 +124,10 @@ else:
             #Imaging and Fitting Function
             def FitImage(centered_halo, plot_axis, legend=True):
                 #Create a smoothed SB profile to determine Reff and SB @ 2Reff
-                R = pynbody.analysis.halo.virial_radius(centered_halo)
+                try:
+                    R = pynbody.analysis.halo.virial_radius(centered_halo)
+                except:
+                    R = 10
                 p = pynbody.analysis.profile.Profile(centered_halo.s,type='lin',min=.25,max=R,ndim=2,nbins=int((R-0.25)/0.1))
                 #gband = gbandprofile(p['sb,b'],p['sb,v'])
                 sb = p['sb,v']
