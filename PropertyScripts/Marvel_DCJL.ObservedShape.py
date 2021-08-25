@@ -148,36 +148,47 @@ else:
                 plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
                 plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
                 plot_axis.scatter(0,0,marker='+',c='k')
-                inds = np.where((im>v*.99) & (im<v*1.01))
-                iso_y = pix2kpc(inds[0],8*par[1])
-                iso_x = pix2kpc(inds[1],8*par[1])
-                plot_axis.scatter(iso_x,iso_y,c='r',s=.5**2)
-                #Fit Ellipse to isophote, and store axis ratio
-                E = EllipseFit(iso_x,iso_y)
-                cen = EllipseCenter(E)
-                phi = EllipseAngle(E)
-                a,b = EllipseAxes(E)
-                plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
-                plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
-                        ,linewidth=.5,color='orange')
-                plot_axis.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1]
-                        ,b*sin(phi+pi/2)+cen[1]],linewidth=.5,color='orange')
-                plot_axis.set_title(f'{round(min([b,a])/max([b,a]),3)}')
-                if legend: 
-                    plot_axis.plot([-100,-100],[-100,-100],c='r',label=r'Isophote (2 R$_{eff}$)')
-                    plot_axis.plot([-100,-100],[-100,-100],c='orange',label='Ellipse Fit')
-                    plot_axis.legend(loc='lower left',ncol=2,prop={'size':10})
-                #Return axis ratio
-                return(min([b,a])/max([b,a]))
-            
-            f,ax = plt.subplots(1,2,figsize=(15,6))
-            pynbody.analysis.angmom.faceon(halo)
-            faceon = FitImage(halo,ax[0])
-            pynbody.analysis.angmom.sideon(halo)
-            sideon = FitImage(halo,ax[1],legend=False)
-            current['b/a'] = faceon
-            current['c/a'] = sideon
-            f.savefig(image_dir+f'{sim}.{halonum}.png',bbox_inches='tight',pad_inches=.1)
+                inds,tol = [[[],[]],.01]
+                while len(inds[0])==0 and tol<.1:
+                    print(tol)
+                    inds = np.where((im>v*(1-tol)) & (im<v*(1+tol)))
+                    tol+=.01
+                if len(inds[0])==0:
+                    return(np.nan)
+                else:
+                    inds = np.where((im>v*.99) & (im<v*1.01))
+                    iso_y = pix2kpc(inds[0],8*par[1])
+                    iso_x = pix2kpc(inds[1],8*par[1])
+                    plot_axis.scatter(iso_x,iso_y,c='r',s=.5**2)
+                    #Fit Ellipse to isophote, and store axis ratio
+                    E = EllipseFit(iso_x,iso_y)
+                    cen = EllipseCenter(E)
+                    phi = EllipseAngle(E)
+                    a,b = EllipseAxes(E)
+                    plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
+                    plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
+                            ,linewidth=.5,color='orange')
+                    plot_axis.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1]
+                            ,b*sin(phi+pi/2)+cen[1]],linewidth=.5,color='orange')
+                    plot_axis.set_title(f'{round(min([b,a])/max([b,a]),3)}')
+                    if legend: 
+                        plot_axis.plot([-100,-100],[-100,-100],c='r',label=r'Isophote (2 R$_{eff}$)')
+                        plot_axis.plot([-100,-100],[-100,-100],c='orange',label='Ellipse Fit')
+                        plot_axis.legend(loc='lower left',ncol=2,prop={'size':10})
+                    #Return axis ratio
+                    return(min([b,a])/max([b,a]))
+            if len(halo.s)>0:
+                f,ax = plt.subplots(1,2,figsize=(15,6))
+                pynbody.analysis.angmom.faceon(halo)
+                faceon = FitImage(halo,ax[0])
+                pynbody.analysis.angmom.sideon(halo)
+                sideon = FitImage(halo,ax[1],legend=False)
+                current['b/a'] = faceon
+                current['c/a'] = sideon
+                f.savefig(image_dir+f'{sim}.{halonum}.png',bbox_inches='tight',pad_inches=.1)
+            else:
+                current['b/a'] = np.nan
+                current['c/a'] = np.nan
             ########################################################
             
 
