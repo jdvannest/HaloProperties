@@ -150,7 +150,6 @@ else:
                 plot_axis.scatter(0,0,marker='+',c='k')
                 inds,tol = [[[],[]],.01]
                 while len(inds[0])==0 and tol<.1:
-                    print(tol)
                     inds = np.where((im>v*(1-tol)) & (im<v*(1+tol)))
                     tol+=.01
                 if len(inds[0])==0:
