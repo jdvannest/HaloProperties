@@ -141,44 +141,47 @@ else:
                 if True in np.isnan(y):
                     x = np.delete(x,np.where(np.isnan(y)==True))
                     y = np.delete(y,np.where(np.isnan(y)==True))
-                r0 = x[int(len(x)/2)]
-                m0 = np.mean(y[:3])
-                par,ign = curve_fit(sersic,x,y,p0=(m0,r0,1),bounds=([10,0,0.5],[40,100,16.5]))
-                ind = np.where(abs(p['rbins']-2*par[1])==min(abs(p['rbins']-2*par[1])))[0][0]
-                v = p['v_lum_den'][ind]
-                #Plot image and locate isophote of SB @ 2Reff
-                im = image(centered_halo.s,qty='v_lum_den',width=8*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
-                plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
-                plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
-                plot_axis.scatter(0,0,marker='+',c='k')
-                inds,tol = [[[],[]],.01]
-                while len(inds[0])==0 and tol<.1:
-                    inds = np.where((im>v*(1-tol)) & (im<v*(1+tol)))
-                    tol+=.01
-                if len(inds[0])==0:
-                    return(np.nan)
+                if len(x)>0:
+                    r0 = x[int(len(x)/2)]
+                    m0 = np.mean(y[:3])
+                    par,ign = curve_fit(sersic,x,y,p0=(m0,r0,1),bounds=([10,0,0.5],[40,100,16.5]))
+                    ind = np.where(abs(p['rbins']-2*par[1])==min(abs(p['rbins']-2*par[1])))[0][0]
+                    v = p['v_lum_den'][ind]
+                    #Plot image and locate isophote of SB @ 2Reff
+                    im = image(centered_halo.s,qty='v_lum_den',width=8*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
+                    plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
+                    plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
+                    plot_axis.scatter(0,0,marker='+',c='k')
+                    inds,tol = [[[],[]],.01]
+                    while len(inds[0])==0 and tol<.1:
+                        inds = np.where((im>v*(1-tol)) & (im<v*(1+tol)))
+                        tol+=.01
+                    if len(inds[0])==0:
+                        return(np.nan)
+                    else:
+                        inds = np.where((im>v*.99) & (im<v*1.01))
+                        iso_y = pix2kpc(inds[0],8*par[1])
+                        iso_x = pix2kpc(inds[1],8*par[1])
+                        plot_axis.scatter(iso_x,iso_y,c='r',s=.5**2)
+                        #Fit Ellipse to isophote, and store axis ratio
+                        E = EllipseFit(iso_x,iso_y)
+                        cen = EllipseCenter(E)
+                        phi = EllipseAngle(E)
+                        a,b = EllipseAxes(E)
+                        plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
+                        plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
+                                ,linewidth=.5,color='orange')
+                        plot_axis.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1]
+                                ,b*sin(phi+pi/2)+cen[1]],linewidth=.5,color='orange')
+                        plot_axis.set_title(f'{round(min([b,a])/max([b,a]),3)}')
+                        if legend: 
+                            plot_axis.plot([-100,-100],[-100,-100],c='r',label=r'Isophote (2 R$_{eff}$)')
+                            plot_axis.plot([-100,-100],[-100,-100],c='orange',label='Ellipse Fit')
+                            plot_axis.legend(loc='lower left',ncol=2,prop={'size':10})
+                        #Return axis ratio
+                        return(min([b,a])/max([b,a]))
                 else:
-                    inds = np.where((im>v*.99) & (im<v*1.01))
-                    iso_y = pix2kpc(inds[0],8*par[1])
-                    iso_x = pix2kpc(inds[1],8*par[1])
-                    plot_axis.scatter(iso_x,iso_y,c='r',s=.5**2)
-                    #Fit Ellipse to isophote, and store axis ratio
-                    E = EllipseFit(iso_x,iso_y)
-                    cen = EllipseCenter(E)
-                    phi = EllipseAngle(E)
-                    a,b = EllipseAxes(E)
-                    plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
-                    plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
-                            ,linewidth=.5,color='orange')
-                    plot_axis.plot([-b*cos(phi+pi/2)+cen[0],b*cos(phi+pi/2)+cen[0]],[-b*sin(phi+pi/2)+cen[1]
-                            ,b*sin(phi+pi/2)+cen[1]],linewidth=.5,color='orange')
-                    plot_axis.set_title(f'{round(min([b,a])/max([b,a]),3)}')
-                    if legend: 
-                        plot_axis.plot([-100,-100],[-100,-100],c='r',label=r'Isophote (2 R$_{eff}$)')
-                        plot_axis.plot([-100,-100],[-100,-100],c='orange',label='Ellipse Fit')
-                        plot_axis.legend(loc='lower left',ncol=2,prop={'size':10})
-                    #Return axis ratio
-                    return(min([b,a])/max([b,a]))
+                    return(np.nan)
             if len(halo.s)>0:
                 f,ax = plt.subplots(1,2,figsize=(15,6))
                 pynbody.analysis.angmom.faceon(halo)
