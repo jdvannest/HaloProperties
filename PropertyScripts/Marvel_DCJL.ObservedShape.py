@@ -148,7 +148,7 @@ else:
                     ind = np.where(abs(p['rbins']-2*par[1])==min(abs(p['rbins']-2*par[1])))[0][0]
                     v = p['v_lum_den'][ind]
                     #Plot image and locate isophote of SB @ 2Reff
-                    im = image(centered_halo.s,qty='v_lum_den',width=8*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
+                    im = image(centered_halo.s,qty='v_lum_den',width=12*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
                     plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
                     plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
                     plot_axis.scatter(0,0,marker='+',c='k')
