@@ -17,7 +17,7 @@ args = parser.parse_args()
 
 #########################################################################
 #Change the name of the property you're collecting (used for file naming)
-property = 'CoreSlope'
+property = 'DarkMatterProfiles'
 image_dir = args.path+f'Images/DarkMatterProfiles/'
 def CoreEinasto(r,rho_s,r_s,r_c,a):
     return( rho_s*np.exp(-(2/a)*(((r+r_c)/r_s)**a-1)) )
