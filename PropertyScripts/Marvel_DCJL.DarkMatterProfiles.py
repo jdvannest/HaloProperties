@@ -18,7 +18,7 @@ args = parser.parse_args()
 #########################################################################
 #Change the name of the property you're collecting (used for file naming)
 property = 'CoreSlope'
-image_dir = args.path+f'Images/DarkMatterProfles/'
+image_dir = args.path+f'Images/DarkMatterProfiles/'
 def CoreEinasto(r,rho_s,r_s,r_c,a):
     return( rho_s*np.exp(-(2/a)*(((r+r_c)/r_s)**a-1)) )
 from pynbody.analysis.profile import Profile
@@ -81,23 +81,32 @@ else:
             ########################################################
             #Replace this block with the desired property to collect
 
-            pynbody.analysis.angmom.faceon(halo)
-            prof = Profile(halo.d,ndim=3,min=0.25,max=10,type='log')
-            current['rbins'] = prof['rbins']
-            current['density'] = prof['density']
-            x,y = np.log10(prof['rbins']),np.log10(prof['density'])
-            par,err = curve_fit(CoreEinasto,x,y)
-            current['fitpar'] = par
-            x_in = np.log10(prof['rbins'][(prof['rbins']<par[2])])
-            y_in = np.log10(prof['density'][(prof['rbins']<par[2])])
-            line =  polyfit(x_in,y_in,1)
-            current['CoreSlope'] = line[0]
-
             f,ax = plt.subplots(1,1)
-            ax.plot(x,y,c='k')
-            ax.plot(x,CoreEinasto(x,par[0],par[1],par[2],par[3]),c='b')
-            ax.axvline(np.log10(par[2]),color='k',linestyle='--')
-            ax.plot(x_in,y_in,c='r')
+            current['rbins'] = np.nan
+            current['density'] = np.nan
+            current['fitpar'] = np.nan
+            current['CoreSlope'] = np.nan
+            try:
+                pynbody.analysis.angmom.faceon(halo)
+                prof = Profile(halo.d,ndim=3,min=0.25,max=10,type='log')
+                current['rbins'] = prof['rbins']
+                current['density'] = prof['density']
+                x,y = np.log10(prof['rbins']),np.log10(prof['density'])
+                ax.plot(x,y,c='k')
+
+                par,err = curve_fit(CoreEinasto,x,y)
+                current['fitpar'] = par
+                ax.plot(x,CoreEinasto(x,par[0],par[1],par[2],par[3]),c='b')
+                ax.axvline(np.log10(par[2]),color='k',linestyle='--')
+
+                x_in = np.log10(prof['rbins'][(prof['rbins']<par[2])])
+                y_in = np.log10(prof['density'][(prof['rbins']<par[2])])
+                line =  polyfit(x_in,y_in,1)
+                current['CoreSlope'] = line[0]
+                ax.plot(x_in,line[0]*x_in+line[1],c='r')
+            except:
+                error = 1
+
             ax.set_xlabel(r'Log$_{10}$(r)')
             ax.set_ylabel(r'Log$_{10}$($\rho_{dm}$)')
             f.savefig(image_dir+f'{sim}.{halonum}.png',bbox_inches='tight',pad_inches=.1)
