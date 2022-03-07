@@ -88,8 +88,8 @@ else:
                     Rvir = 10
                 current['Rvir'] = Rvir
                 prof = pynbody.analysis.profile.Profile(halo.d,ndim=3,min=0.25,max=Rvir,type='log')
-                x_in = np.log10(prof['rbins'][(prof['rbins']<1e-.2)])
-                y_in = np.log10(prof['density'][(prof['rbins']<1e-.2)])
+                x_in = np.log10(prof['rbins'][(prof['rbins']<10**(-.2))])
+                y_in = np.log10(prof['density'][(prof['rbins']<10**(-.2))])
                 line =  polyfit(x_in,y_in,1)
                 current['CoreSlope'] = line[0]
 
