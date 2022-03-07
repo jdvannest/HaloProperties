@@ -84,12 +84,17 @@ else:
             if cont:
                 try:
                     Rvir = pynbody.analysis.halo.virial_radius(halo)
+                    #Fit in 1-2%Rvir according to Lazar+2020 (https://arxiv.org/pdf/2004.10817.pdf)
+                    upper = .02*Rvir
+                    lower = .01*Rvir if .01*Rvir>.25 else .25
                 except:
                     Rvir = 10
+                    lower = .25
+                    upper = 10**-.2
                 current['Rvir'] = Rvir
                 prof = pynbody.analysis.profile.Profile(halo.d,ndim=3,min=0.25,max=Rvir,type='log')
-                x_in = np.log10(prof['rbins'][(prof['rbins']<10**(-.2))])
-                y_in = np.log10(prof['density'][(prof['rbins']<10**(-.2))])
+                x_in = np.log10(prof['rbins'][(prof['rbins']<upper) & (prof['rbins']>lower)])
+                y_in = np.log10(prof['density'][(prof['rbins']<upper) & (prof['rbins']>lower)])
                 line =  polyfit(x_in,y_in,1)
                 current['CoreSlope'] = line[0]
 
