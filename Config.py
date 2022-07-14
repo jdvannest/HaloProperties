@@ -41,10 +41,6 @@ Sims = {
     'h329' : {
         'path' : dcjl_path+'h329.cosmo50PLK.3072gst5HbwK1BH/h329.cosmo50PLK.3072gst5HbwK1BH.004096/h329.cosmo50PLK.3072gst5HbwK1BH.004096',
         'halos' : [7,29,30,37,53,92,115,117,127]
-    },
-    'storm_bubble' : {
-        'path' : marvel_path+'storm.cosmo25cmb.4096g1HsbBH.004096/storm.cosmo25cmb.4096g1HsbBH.004096',
-        'halos' : [1,2,3,4,5,6,7,8,10,11,12,14,15,18,21,23,35,38,42,48,49,61,88,125,133,175,186,235,262,272,273,300,541,1974]
     }
 }
 
