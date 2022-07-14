@@ -8,7 +8,7 @@ def myprint(string,clear=False):
     print(string)
 warnings.filterwarnings("ignore")
 parser = argparse.ArgumentParser()
-parser.add_argument("-s","--simulation",choices=['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329'],required=True)
+parser.add_argument("-s","--simulation",choices=['cptmarvel','elektra','storm','rogue','h148','h229','h242','h329','storm_bubble'],required=True)
 parser.add_argument("-o","--overwrite",action='store_true')
 parser.add_argument("-p","--path",required=True)
 parser.add_argument("-n","--numproc",required=True,type=int)
