@@ -82,16 +82,20 @@ else:
             from matplotlib.patches import Ellipse
             from numpy import sin,cos
             plt.rcParams.update({'text.usetex':False})
+            #Sersic Function which is fit to the Surface-Brightness Pofiles of galaxy
             def sersic(r, mueff, reff, n):
                 return mueff + 2.5*(0.868*n-0.142)*((r/reff)**(1./n) - 1)
+            #Creates a g-band SB profile from the b- and v-band data
             def gbandprofile(b,v):
                 B = np.array(b)
                 V = np.array(v)
                 return(V + 0.6*(B-V) - 0.12)
+            #Conversion functions for image pixels to sim values in kpc
             def pix2kpc(pix,width):
                 return(pix/1000.*width-(width/2.))
             def kpc2pix(kpc,width):
                 return(int((kpc+(width/2.))/width*1000))
+            
             #Ellipse functions from https://stackoverflow.com/questions/13635528/fit-a-ellipse-in-python-given-a-set-of-points-xi-xi-yi
             def EllipseFit(x,y):
                 x = x[:,np.newaxis]
@@ -125,49 +129,63 @@ else:
             def FitImage(centered_halo, plot_axis, legend=True):
                 #Create a smoothed SB profile to determine Reff and SB @ 2Reff
                 try:
-                    R = pynbody.analysis.halo.virial_radius(centered_halo)
+                    Rvir = pynbody.analysis.halo.virial_radius(centered_halo)
                 except:
-                    R = 10
-                p = pynbody.analysis.profile.Profile(centered_halo.s,type='lin',min=.25,max=R,ndim=2,nbins=int((R-0.25)/0.1))
+                    Rvir = 10
+                prof = pynbody.analysis.profile.Profile(centered_halo.s,type='lin',min=.25,max=Rvir,ndim=2,nbins=int((Rvir-0.25)/0.1))
                 #gband = gbandprofile(p['sb,b'],p['sb,v'])
-                sb = p['sb,v']
+                sb = prof['sb,v']
+                #Smooth the sb profile
                 smooth = np.nanmean(np.pad(sb.astype(float),(0,3-sb.size%3),mode='constant',constant_values=np.nan).reshape(-1,3),axis=1)
                 try:
                     y = smooth[:np.where(smooth>32)[0][0]+1]
                 except:
                     y = smooth
+                #Create the x-data for the sb profile
                 x = np.arange(len(y))*0.3 + 0.15
                 x[0] = 0.05
+                #Remove any NaN's from profile
                 if True in np.isnan(y):
                     x = np.delete(x,np.where(np.isnan(y)==True))
                     y = np.delete(y,np.where(np.isnan(y)==True))
+                #Perform Sersic fit on smoothed SB profile (if not all NaN's)
                 if len(x)>0:
+                    #Initial guess values for curve_fit
                     r0 = x[int(len(x)/2)]
                     m0 = np.mean(y[:3])
                     par,ign = curve_fit(sersic,x,y,p0=(m0,r0,1),bounds=([10,0,0.5],[40,100,16.5]))
-                    ind = np.where(abs(p['rbins']-2*par[1])==min(abs(p['rbins']-2*par[1])))[0][0]
-                    v = p['v_lum_den'][ind]
-                    #Plot image and locate isophote of SB @ 2Reff
-                    im = image(centered_halo.s,qty='v_lum_den',width=12*par[1],subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
-                    plot_axis.set_xlim([-8*par[1]/2,8*par[1]/2])
-                    plot_axis.set_ylim([-8*par[1]/2,8*par[1]/2])
+                    #find the array index closest to 2*Reff (Reff is par[1] from the Sersic function)
+                    ind = np.where(abs(prof['rbins']-2*par[1])==min(abs(prof['rbins']-2*par[1])))[0][0]
+                    #Get the v-band luminosity density at 2*Reff
+                    v = prof['v_lum_den'][ind]
+                    #Create a stellar particle filter around the halo and generate image
+                    width = 12*par[1]
+                    sphere = pynbody.filt.Sphere(width*np.sqrt(2)*1.01)
+                    im = image(s[sphere].s,qty='v_lum_den',width=width,subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
+                    #Set image axes to -6 to 6 Reff and plot + marker at center
+                    plot_axis.set_xlim([-width/2,width/2])
+                    plot_axis.set_ylim([-width/2,width/2])
                     plot_axis.scatter(0,0,marker='+',c='k')
-                    inds,tol = [[[],[]],.01]
-                    while len(inds[0])==0 and tol<.1:
-                        inds = np.where((im>v*(1-tol)) & (im<v*(1+tol)))
-                        tol+=.01
+                    #Find the image indices if isophote (defined as having v-lum within tolerance of SB@2Reff)
+                    inds,tolerance = [[[],[]],.01]
+                    while len(inds[0])==0 and tolerance<.1:
+                        inds = np.where((im>v*(1-tolerance)) & (im<v*(1+tolerance)))
+                        tolerance+=.01
                     if len(inds[0])==0:
                         return(np.nan)
                     else:
+                        #If isophote exists, redifine to be within 1% of sb @ 2Reff
                         inds = np.where((im>v*.99) & (im<v*1.01))
-                        iso_y = pix2kpc(inds[0],8*par[1])
-                        iso_x = pix2kpc(inds[1],8*par[1])
+                        #Convert isophote image coordinates into kpc cooordinates and plot it over the image
+                        iso_y = pix2kpc(inds[0],width)
+                        iso_x = pix2kpc(inds[1],width)
                         plot_axis.scatter(iso_x,iso_y,c='r',s=.5**2)
                         #Fit Ellipse to isophote, and store axis ratio
                         E = EllipseFit(iso_x,iso_y)
                         cen = EllipseCenter(E)
                         phi = EllipseAngle(E)
                         a,b = EllipseAxes(E)
+                        #Plot the ellipse fit on the image and set image title to axis ratio
                         plot_axis.add_patch(Ellipse(cen,2*a,2*b,angle=degrees(phi),facecolor='None',edgecolor='orange'))
                         plot_axis.plot([-a*cos(phi)+cen[0],a*cos(phi)+cen[0]],[-a*sin(phi)+cen[1],a*sin(phi)+cen[1]]
                                 ,linewidth=.5,color='orange')
@@ -182,7 +200,10 @@ else:
                         return(min([b,a])/max([b,a]))
                 else:
                     return(np.nan)
+            
+            #Load in the halo, and use imaging/fitting function
             if len(halo.s)>0:
+                #Create 2 panel figure, and plot faceon image in left pane and sideon image in right 
                 f,ax = plt.subplots(1,2,figsize=(15,6))
                 pynbody.analysis.angmom.faceon(halo)
                 faceon = FitImage(halo,ax[0])
