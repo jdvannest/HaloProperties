@@ -65,7 +65,7 @@ else:
             #Load in specific halo
             halonum = Sims[sim]['halos'][i]
             halo = h[halonum]
-
+            
             #The shared dictionary object does not allow writing to sub-dictionaries
             #So use 'current' as a 'middle-man' step that will be inserted as a whole
             #into the shared dictionary at the end
@@ -125,9 +125,36 @@ else:
                 res2=np.sqrt(up/down2)
                 return np.array([res1,res2])
             
+            def FindIsophote(axis, xval, yval, profile, rguess, mguess):
+                par,ign = curve_fit(sersic,xval,yval,p0=(mguess,rguess,1),bounds=([10,0,0.5],[40,100,16.5]),absolute_sigma=True)
+                #find the array index closest to 2*Reff (Reff is par[1] from the Sersic function)
+                if halonum == 22: myprint('profile[rbins]: '+f'{profile["rbins"]}')
+                ind = np.where(abs(profile['rbins']-2*par[1])==min(abs(profile['rbins']-2*par[1])))[0][0]
+                #Get the v-band luminosity density at 2*Reff
+                if halonum == 22 and sim == 'storm': ind = 3
+                vband = profile['v_lum_den'][ind]
+                #Create a stellar particle filter around the halo and generate image
+                width = 12*par[1]
+                sphere = pynbody.filt.Sphere(width*np.sqrt(2)*1.01)
+                img = image(s[sphere].s,qty='v_lum_den',width=width,subplot=axis,units='kpc^-2',resolution=1000,show_cbar=False)
+                #Set image axes to -6 to 6 Reff and plot + marker at center
+                axis.set_xlim([-width/2,width/2])
+                axis.set_ylim([-width/2,width/2])
+                axis.scatter(0,0,marker='+',c='k')
+                #Find the image indices if isophote (defined as having v-lum within tolerance of SB@2Reff)
+                inds,tolerance = [[[],[]],.01]
+                while len(inds[0])==0 and tolerance<0.1:
+                    inds = np.where((img>vband*(1-tolerance)) & (img<vband*(1+tolerance)))
+                    tolerance+=.01
+                return inds, img, vband, width
+            
+            
             #Imaging and Fitting Function
             def FitImage(centered_halo, plot_axis, legend=True):
                 #Create a smoothed SB profile to determine Reff and SB @ 2Reff
+                #if len(centered_halo.s) < 30:
+                #    myprint(f'{halonum} has less than 30 stars')
+                #    return(np.nan)
                 try:
                     Rvir = pynbody.analysis.halo.virial_radius(centered_halo)
                 except:
@@ -136,7 +163,7 @@ else:
                 #gband = gbandprofile(p['sb,b'],p['sb,v'])
                 sb = prof['sb,v']
                 #Smooth the sb profile
-                smooth = np.nanmean(np.pad(sb.astype(float),(0,3-sb.size%3),mode='constant',constant_values=np.nan).reshape(-1,3),axis=1)
+                smooth = np.nanmean(np.pad(sb.astype(np.float64),(0,3-sb.size%3),mode='constant',constant_values=np.nan).reshape(-1,3),axis=1)
                 try:
                     y = smooth[:np.where(smooth>32)[0][0]+1]
                 except:
@@ -153,28 +180,139 @@ else:
                     #Initial guess values for curve_fit
                     r0 = x[int(len(x)/2)]
                     m0 = np.mean(y[:3])
-                    par,ign = curve_fit(sersic,x,y,p0=(m0,r0,1),bounds=([10,0,0.5],[40,100,16.5]))
-                    #find the array index closest to 2*Reff (Reff is par[1] from the Sersic function)
-                    ind = np.where(abs(prof['rbins']-2*par[1])==min(abs(prof['rbins']-2*par[1])))[0][0]
-                    #Get the v-band luminosity density at 2*Reff
-                    v = prof['v_lum_den'][ind]
-                    #Create a stellar particle filter around the halo and generate image
-                    width = 12*par[1]
-                    sphere = pynbody.filt.Sphere(width*np.sqrt(2)*1.01)
-                    im = image(s[sphere].s,qty='v_lum_den',width=width,subplot=plot_axis,units='kpc^-2',resolution=1000,show_cbar=False)
-                    #Set image axes to -6 to 6 Reff and plot + marker at center
-                    plot_axis.set_xlim([-width/2,width/2])
-                    plot_axis.set_ylim([-width/2,width/2])
-                    plot_axis.scatter(0,0,marker='+',c='k')
-                    #Find the image indices if isophote (defined as having v-lum within tolerance of SB@2Reff)
-                    inds,tolerance = [[[],[]],.01]
-                    while len(inds[0])==0 and tolerance<.1:
-                        inds = np.where((im>v*(1-tolerance)) & (im<v*(1+tolerance)))
-                        tolerance+=.01
+                    inds, im, v, width = FindIsophote(plot_axis, x, y, prof, r0, m0)
                     if len(inds[0])==0:
+                        myprint("no isophote, number of stars: " + str(len(centered_halo.s)))
+                        import PySimpleGUI as sg
+                        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+                        # VARS CONSTS:
+                        _VARS = {'window': False,
+                                 'fig_agg': False,
+                                 'pltFig': False,
+                                 'rGuess' : r0,
+                                 'mGuess' : m0}
+
+                        # Theme for pyplot
+                        plt.style.use('Solarize_Light2')
+
+                        # Helper Functions
+
+
+                        def draw_figure(canvas, figure):
+                            figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
+                            figure_canvas_agg.draw()
+                            figure_canvas_agg.get_tk_widget().pack(side='top', fill='both', expand=1)
+                            return figure_canvas_agg
+
+
+                        # \\  -------- PYSIMPLEGUI -------- //
+
+                        AppFont = 'Any 16'
+                        SliderFont = 'Any 14'
+                        sg.theme('black')
+
+                        # Note the new colors for the canvas and window to match pyplots theme:
+                        
+                        rmin = min(x)
+                        rmax = max(x)
+                        mmin = min(y[:3])
+                        mmax = max(y[:3])
+                        
+                        if len(x)<2: 
+                            rmin = x[0]-1
+                            rmax = x[0]+1
+                            
+                        if len(y)<2:
+                            mmin = y[0] - y[0]/2
+                            mmax = y[0] + y[0]/2
+
+                        layout = [[sg.Canvas(key='figCanvas', background_color='#FDF6E3')],
+                                  [sg.Text(text="rGuess :",
+                                       font=SliderFont,
+                                       background_color='#FDF6E3',
+                                       pad=((0, 0), (10, 0)),
+                                       text_color='Black'),
+                                   sg.Slider(range=(rmin, rmax), orientation='h', size=(34, 20),
+                                         default_value=_VARS['rGuess'],
+                                         background_color='#FDF6E3',
+                                         resolution=0.01,
+                                         text_color='Black',
+                                         key='-Slider-',
+                                         enable_events=True),
+                                   sg.Button('Resample',
+                                         font=AppFont,
+                                         pad=((4, 0), (10, 0)))],
+                                   [sg.Text(text="mGuess :",
+                                       font=SliderFont,
+                                       background_color='#FDF6E3',
+                                       pad=((0, 0), (8, 0)),
+                                       text_color='Black'),
+                                   sg.Slider(range=(mmin, mmax), orientation='h', size=(34, 20),
+                                         default_value=_VARS['mGuess'],
+                                         background_color='#FDF6E3',
+                                         resolution=0.01,
+                                         text_color='Black',
+                                         key='-Slider-',
+                                         enable_events=True),
+                                   sg.Button('Resample',
+                                         font=AppFont,
+                                         pad=((4, 0), (8, 0)))],
+                                  [sg.Button('Update', font=AppFont), sg.Button('Exit', font=AppFont)]]
+
+                        _VARS['window'] = sg.Window('FindIsophote GUI',
+                                                       layout,
+                                                       finalize=True,
+                                                       resizable=True,
+                                                       location=(100, 100),
+                                                       element_justification="center",
+                                                       background_color='#FDF6E3')
+
+                        # \\  -------- PYSIMPLEGUI -------- //
+
+
+                        # \\  -------- PYPLOT -------- //
+
+
+                        def drawChart():
+                            _VARS['pltFig'] = plt.figure()
+                            inds, im, v, width = FindIsophote(plot_axis, x, y, prof, _VARS['rGuess'], _VARS['mGuess'])
+                            plt.imshow(im)
+                            _VARS['fig_agg'] = draw_figure(
+                                _VARS['window']['figCanvas'].TKCanvas, _VARS['pltFig'])
+
+
+                        def updateChart():
+                            _VARS['fig_agg'].get_tk_widget().forget()
+                            inds, im, v, width = FindIsophote(plot_axis, x, y, prof, _VARS['rGuess'], _VARS['mGuess'])
+                            # plt.cla()
+                            plt.clf()
+                            plt.imshow(im)
+                            plt.text(5, 200, "len(inds[0]): "+str(len(inds[0])), c='white')
+                            _VARS['fig_agg'] = draw_figure(
+                                _VARS['window']['figCanvas'].TKCanvas, _VARS['pltFig'])
+
+                        # \\  -------- PYPLOT -------- //
+
+
+                        drawChart()
+
+                        # MAIN LOOP
+                        while True:
+                            event, values = _VARS['window'].read(timeout=200)
+                            if event == sg.WIN_CLOSED or event == 'Exit':
+                                break
+                            if event == 'Update':
+                                updateChart()
+                        _VARS['window'].close()
+                        
+                        
+                    if len(inds[0])==0:
+                        myprint("no isophote, GUI failed")
                         return(np.nan)
                     else:
                         #If isophote exists, redifine to be within 1% of sb @ 2Reff
+                        myprint("isophote exists, number of stars: " + str(len(centered_halo.s)))
                         inds = np.where((im>v*.99) & (im<v*1.01))
                         #Convert isophote image coordinates into kpc cooordinates and plot it over the image
                         iso_y = pix2kpc(inds[0],width)
@@ -211,7 +349,7 @@ else:
                 sideon = FitImage(halo,ax[1],legend=False)
                 current['b/a'] = faceon
                 current['c/a'] = sideon
-                f.savefig(image_dir+f'{sim}.{halonum}.png',bbox_inches='tight',pad_inches=.1)
+                f.savefig(image_dir+f'{sim}.{halonum}.png',pad_inches=.1)
             else:
                 current['b/a'] = np.nan
                 current['c/a'] = np.nan
@@ -219,7 +357,7 @@ else:
             
 
             #Print progress to terminal
-            myprint(f'\tWriting: {round(float(prog[0]+1)/float(len(Sims[sim]["halos"]))*100,2)}%',clear=True)
+            myprint(f'\tWriting: {round(float(prog[0]+1)/float(len(Sims[sim]["halos"]))*100,2)}%')
             
             #with pl.lock:  <----- the 'lock' block probably isn't necessary since the only thing that might
             #                    encounter a race condition is the progress counter, which is only for the UI
