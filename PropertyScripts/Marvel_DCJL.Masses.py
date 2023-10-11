@@ -62,8 +62,14 @@ else:
             current['Mstar'] = sum(halo.s['mass'])
             current['Mgas'] = sum(halo.g['mass'])
             current['HI'] = sum(halo['HI']*halo['mass'])
+            Rhalf = pynbody.analysis.luminosity.half_light_r(halo)
+            pynbody.analysis.angmom.faceon(halo)
+            Ms = sum(halo.s['mass'][halo.s['r']<Rhalf])
+            Mg = sum(halo.g['mass'][halo.g['r']<Rhalf])
+            M = sum(halo['mass'][halo['r']<Rhalf])
+            current['Mb/Mtot'] = (Ms+Mg)/M
+            current['Rhalf'] = Rhalf
 
-            
             myprint(f'\tWriting: {round(float(prog[0]+1)/float(len(Sims[sim]["halos"]))*100,2)}%',clear=True)
             #with pl.lock:
             SimData[str(halonum)] = current
